@@ -58,9 +58,17 @@ export async function POST(req: NextRequest) {
       contentType.includes('application/x-www-form-urlencoded')
     ) {
       const formData = await req.formData();
-      formData.forEach((value, key) => {
-        body[key] = typeof value === 'string' ? value : value.name;
-      });
+      for (const [key, value] of formData.entries()) {
+        if (typeof value === 'string') {
+          body[key] = value;
+        } else if (value && typeof (value as Blob).text === 'function') {
+          try {
+            body[key] = await (value as Blob).text();
+          } catch {
+            body[key] = value.name;
+          }
+        }
+      }
     } else {
       // Fallback try JSON
       body = await req.json();
@@ -69,6 +77,9 @@ export async function POST(req: NextRequest) {
     console.error('[webhook] Error parsing body:', err);
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
+
+  // Full serialized text for universal pattern matching
+  const fullPayloadText = JSON.stringify(body);
 
   // Support CloudMailin, Mailgun, and custom payload shapes
   const headers = (body.headers as Record<string, unknown>) ?? {};
@@ -91,6 +102,7 @@ export async function POST(req: NextRequest) {
     (envelope.from as string) ??
     ''
   ).trim();
+
   const htmlBody =
     (body.html as string) ??
     (body['body-html'] as string) ??
@@ -103,36 +115,39 @@ export async function POST(req: NextRequest) {
     (body.stripped_text as string) ??
     '';
 
+  const combinedText = plainBody + ' ' + htmlBody + ' ' + fullPayloadText;
+
   // Handle Gmail forwarding verification email if received
-  if (
+  const isGoogleForwarding =
     from.toLowerCase().includes('google.com') ||
     subject.toLowerCase().includes('forwarding confirmation') ||
-    plainBody.toLowerCase().includes('confirmation code') ||
-    htmlBody.toLowerCase().includes('confirmation code')
-  ) {
-    const combined = plainBody + ' ' + htmlBody;
+    combinedText.toLowerCase().includes('forwarding confirmation') ||
+    combinedText.toLowerCase().includes('confirmation code');
+
+  if (isGoogleForwarding) {
     const codeMatch =
-      combined.match(/confirmation code(?:\s+is)?[:\s]+([0-9]+)/i) ||
-      combined.match(/([0-9]{8,10})/);
+      combinedText.match(/confirmation code[^0-9]*([0-9]{8,10})/i) ||
+      combinedText.match(/confirmation code(?:\s+is)?[:\s\\n\r]+([0-9]+)/i) ||
+      combinedText.match(/([0-9]{8,10})/);
     const code = codeMatch ? codeMatch[1] : null;
 
-    const verifyUrlMatch = combined.match(/https:\/\/mail-settings\.google\.com\/mail\/vf-[^\s"'<>]+/);
-    const verifyUrl = verifyUrlMatch ? verifyUrlMatch[0].replace(/&amp;/g, '&') : null;
+    const verifyUrlMatch = combinedText.match(/https:\/\/mail-settings\.google\.com\/mail\/vf-[^\s"'<>\\]+/);
+    const verifyUrl = verifyUrlMatch ? verifyUrlMatch[0].replace(/\\/g, '') : null;
 
     console.log('[webhook] Gmail forwarding received! Code:', code, 'URL:', verifyUrl);
 
-    if (code || verifyUrl) {
-      const payload = {
-        url: verifyUrl ?? 'https://mail.google.com/',
-        ip: code ? `Gmail Code: ${code}` : 'Gmail Verification Link',
-        location: 'Forwarding Confirmation received from Google',
-        receivedAt: new Date().toISOString(),
-      };
-      try {
-        await redis.set(REDIS_KEY, JSON.stringify(payload), { ex: TTL_SECONDS });
-      } catch (err) {
-        console.error('[webhook] Redis set error:', err);
-      }
+    const payload = {
+      url: verifyUrl ?? 'https://mail.google.com/',
+      ip: code ? `Gmail Code: ${code}` : 'Gmail Forwarding Received',
+      location: code ? 'Enter this confirmation code in Gmail settings' : 'Verification email processed',
+      receivedAt: new Date().toISOString(),
+    };
+
+    try {
+      await redis.set(REDIS_KEY, JSON.stringify(payload), { ex: TTL_SECONDS });
+      console.log('[webhook] Saved Gmail confirmation to Redis:', payload);
+    } catch (err) {
+      console.error('[webhook] Redis set error:', err);
     }
 
     return NextResponse.json({ success: true, message: 'Gmail verification handled', code, verifyUrl });
