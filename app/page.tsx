@@ -254,7 +254,9 @@ function detectLocationLanguage(): Language {
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
     const spanishTimezones = [
-      'Madrid', 'Buenos_Aires', 'Bogota', 'Mexico', 'Santiago', 'Lima', 'Caracas',
+      'Mexico', 'Cancun', 'Merida', 'Monterrey', 'Mazatlan', 'Chihuahua', 'Hermosillo', 'Tijuana',
+      'Bahia_Banderas', 'Matamoros', 'Ojinaga',
+      'Madrid', 'Buenos_Aires', 'Bogota', 'Santiago', 'Lima', 'Caracas',
       'Montevideo', 'La_Paz', 'Asuncion', 'Guayaquil', 'Panama', 'San_Jose', 'Guatemala',
       'Havana', 'Santo_Domingo', 'Tegucigalpa', 'Managua', 'San_Salvador'
     ];
@@ -291,8 +293,33 @@ export default function Home() {
 
   // Initialize Language based on location/locale on mount
   useEffect(() => {
+    // 1. Instant client-side detection via browser locale & timezone
     const detected = detectLocationLanguage();
     setLang(detected);
+
+    // 2. Server IP Geo-location detection via Vercel edge headers
+    const userStoredLang = localStorage.getItem('discord_relay_lang');
+    if (!userStoredLang) {
+      fetch('/api/geo')
+        .then((res) => res.json())
+        .then((geo) => {
+          const country = (geo.country || '').toUpperCase();
+          const spanishCountries = [
+            'MX', 'ES', 'AR', 'CO', 'CL', 'PE', 'VE', 'EC', 'GT',
+            'CU', 'BO', 'DO', 'HN', 'PY', 'SV', 'NI', 'CR', 'PR', 'PA', 'UY'
+          ];
+          if (spanishCountries.includes(country)) {
+            setLang('es');
+          } else if (country === 'BR' || country === 'PT') {
+            setLang('pt');
+          } else if (country === 'FR') {
+            setLang('fr');
+          } else if (country === 'DE' || country === 'AT' || country === 'CH') {
+            setLang('de');
+          }
+        })
+        .catch(() => {});
+    }
 
     const stored = localStorage.getItem('discord_relay_pin');
     if (stored) setSavedPin(stored);
