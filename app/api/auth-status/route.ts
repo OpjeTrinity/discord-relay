@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { redis, REDIS_KEY } from '@/lib/redis';
 import { isPinValid } from '@/lib/auth';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 export async function GET(req: NextRequest) {
   if (!isPinValid(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

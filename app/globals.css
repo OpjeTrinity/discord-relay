@@ -4,33 +4,19 @@
 
 @layer base {
   :root {
-    --md-sys-color-background: #101216;
-    --md-sys-color-surface: #101216;
-    --md-sys-color-surface-dim: #0d0f12;
-    --md-sys-color-surface-container-lowest: #0c0d10;
-    --md-sys-color-surface-container-low: #17191d;
-    --md-sys-color-surface-container: #1b1d22;
-    --md-sys-color-surface-container-high: #24272d;
-    --md-sys-color-surface-container-highest: #2d3037;
-    --md-sys-color-on-surface: #e2e2e9;
-    --md-sys-color-on-surface-variant: #c3c6cf;
-    --md-sys-color-outline: #8d9199;
-    --md-sys-color-outline-variant: #43474e;
-    --md-sys-color-primary: #b8c4ff;
-    --md-sys-color-on-primary: #122878;
-    --md-sys-color-primary-container: #2e4190;
-    --md-sys-color-on-primary-container: #dce1ff;
-    --md-sys-color-secondary: #c3c5dd;
-    --md-sys-color-secondary-container: #424659;
-    --md-sys-color-on-secondary-container: #e0e1f9;
-    --md-sys-color-tertiary: #e7b9d4;
-    --md-sys-color-tertiary-container: #5d3b53;
-    --md-sys-color-on-tertiary-container: #ffd7ef;
-    --md-sys-color-error: #ffb4ab;
-    --md-sys-color-error-container: #93000a;
-    --md-sys-color-success: #7ce09b;
-    --md-sys-color-success-container: #005328;
-    --md-sys-color-on-success-container: #99fdb6;
+    --discord-blurple: #5865F2;
+    --discord-blurple-hover: #4752C4;
+    --discord-green: #23A55A;
+    --discord-yellow: #F0B232;
+    --discord-red: #F23F43;
+    --discord-dark-1: #1E1F22;
+    --discord-dark-2: #2B2D31;
+    --discord-dark-3: #313338;
+    --discord-dark-4: #383A40;
+    --discord-dark-border: #3F4147;
+    --discord-text-normal: #DBDEE1;
+    --discord-text-muted: #949BA4;
+    --discord-text-header: #F2F3F5;
   }
 }
 
@@ -39,27 +25,27 @@
 }
 
 body {
-  background-color: var(--md-sys-color-background);
-  color: var(--md-sys-color-on-surface);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, Roboto, sans-serif;
+  background-color: var(--discord-dark-1);
+  color: var(--discord-text-normal);
+  font-family: 'gg sans', 'Noto Sans', Whitney, 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-@keyframes pulse-ring {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.12); opacity: 0.3; }
-  100% { transform: scale(0.95); opacity: 0.8; }
+/* Custom Discord-like scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-@keyframes ripple-wave {
-  0% { transform: scale(0.8); opacity: 0.6; }
-  100% { transform: scale(1.8); opacity: 0; }
+::-webkit-scrollbar-track {
+  background-color: #2B2D31;
 }
 
-.animate-pulse-ring {
-  animation: pulse-ring 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+::-webkit-scrollbar-thumb {
+  background-color: #1A1B1E;
+  border-radius: 4px;
 }
 
-.animate-ripple {
-  animation: ripple-wave 2.4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+::-webkit-scrollbar-thumb:hover {
+  background-color: #111214;
 }

@@ -200,15 +200,18 @@ export async function POST(req: NextRequest) {
     console.log('[webhook] Gmail forwarding received! Code:', code, 'URL:', verifyUrl);
 
     const payload = {
+      subject: subject || 'Gmail Forwarding Confirmation',
+      from: from || 'forwarding-noreply@google.com',
+      html: htmlBody,
+      plain: plainBody,
+      code,
       url: verifyUrl ?? 'https://mail.google.com/',
-      ip: code ? `Gmail Code: ${code}` : 'Gmail Forwarding Received',
-      location: code ? 'Enter this confirmation code in Gmail settings' : 'Verification email processed',
       receivedAt: new Date().toISOString(),
     };
 
     try {
       await redis.set(REDIS_KEY, JSON.stringify(payload), { ex: TTL_SECONDS });
-      console.log('[webhook] Saved Gmail confirmation to Redis:', payload);
+      console.log('[webhook] Saved Gmail confirmation to Redis');
     } catch (err) {
       console.error('[webhook] Redis set error:', err);
     }
@@ -229,35 +232,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ignored: true, reason: 'Not recognized as a Discord email' }, { status: 200 });
   }
 
-  // Try HTML first, fall back to plain text, and search whole payload
-  const searchText = decodeHtmlEntities(htmlBody || plainBody || combinedText);
-  const extraction = extractFromBody(searchText);
-
-  let finalUrl = extraction.url;
-  if (!finalUrl) {
-    // Search combined payload text for any Discord link
-    for (const pattern of URL_PATTERNS) {
-      const match = combinedText.match(pattern);
-      if (match) {
-        finalUrl = match[0].replace(/\\/g, '').replace(/&amp;/g, '&').trim();
-        break;
-      }
-    }
-  }
-
+  // Store the ENTIRE email content so it displays exactly as sent
   const payload = {
-    url: finalUrl ?? 'https://discord.com/login',
-    ip: extraction.ip ?? 'Discord Security Alert',
-    location: extraction.location ?? (subject || 'New location detected'),
+    subject: subject || 'Discord Notification',
+    from: from || 'noreply@discord.com',
+    html: htmlBody,
+    plain: plainBody,
     receivedAt: new Date().toISOString(),
   };
 
   try {
     await redis.set(REDIS_KEY, JSON.stringify(payload), { ex: TTL_SECONDS });
-    console.log('[webhook] Stored Discord auth payload:', JSON.stringify({ ...payload, url: finalUrl ? '[FOUND]' : '[DEFAULT]' }));
+    console.log('[webhook] Stored full email payload to Redis, subject:', payload.subject);
   } catch (err) {
     console.error('[webhook] Redis set error:', err);
   }
 
-  return NextResponse.json({ success: true, urlFound: !!finalUrl });
+  return NextResponse.json({ success: true });
 }
