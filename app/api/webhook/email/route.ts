@@ -17,27 +17,58 @@ const URL_PATTERNS = [
 const IP_PATTERN = /(?:IP(?:\s*Address)?|IP)[:\s]+([0-9]{1,3}(?:\.[0-9]{1,3}){3}(?::[0-9]+)?)/i;
 const LOCATION_PATTERN = /(?:Location|Near)[:\s]+([^\n\r<]+?)(?:\s*<|\s*\n|\s*\r|$)/i;
 
-function extractFromBody(body: string): { url: string | null; ip: string | null; location: string | null } {
-  let url: string | null = null;
+function extractVerificationUrl(cleanBody: string): string | null {
+  // 1. Direct authorize-ip or token URL (highest priority & accuracy)
+  const directMatch =
+    cleanBody.match(/https:\/\/(?:[a-z0-9.-]+\.)?discord(?:app)?\.com\/(?:authorize-ip|verify|ra)[^\s"'<>]*/i) ||
+    cleanBody.match(/https:\/\/[^\s"'<>]*token=[a-zA-Z0-9._-]+/i);
+  if (directMatch) {
+    return directMatch[0].replace(/&amp;/g, '&').trim();
+  }
 
+  // 2. Anchor tag whose button text is "Verify" or "Authorize" (skips the logo link)
+  const ctaMatch = cleanBody.match(
+    /<a\b[^>]*\bhref=["'](https:\/\/[^"']+)["'][^>]*>(?:(?!<\/a>)[\s\S])*(?:Verify|Authorize)(?:(?!<\/a>)[\s\S])*<\/a>/i
+  );
+  if (ctaMatch) {
+    return ctaMatch[1].replace(/&amp;/g, '&').trim();
+  }
+
+  // 3. Link following text like "Verify Login", "Authorize Login", or "button below"
+  const followingMatch = cleanBody.match(
+    /(?:Verify Login|Authorize Login|Authorize IP|clicking the button below)[\s\S]{0,350}?(https:\/\/(?:click\.discord\.com|discord\.com|email\.discord\.com)[^\s"'<>]+)/i
+  );
+  if (followingMatch) {
+    return followingMatch[1].replace(/&amp;/g, '&').trim();
+  }
+
+  // 4. Multiple SendGrid tracking links:
+  // Link 1 is almost always the header logo (<img alt="Discord">), Link 2 is the primary CTA button!
+  const allClickLinks = Array.from(
+    cleanBody.matchAll(/https:\/\/click\.discord\.com\/ls\/click\?[^\s"'<>]+/gi)
+  ).map((m) => m[0].replace(/&amp;/g, '&').trim());
+
+  if (allClickLinks.length > 1) {
+    // If one of the links is near "verify", pick it; otherwise pick Link 2 (the action button)
+    return allClickLinks[1];
+  } else if (allClickLinks.length === 1) {
+    return allClickLinks[0];
+  }
+
+  // 5. Any generic Discord link as fallback (avoiding bare root domain)
+  const fallbackMatch = cleanBody.match(/https:\/\/(?:click\.|email\.)?discord(?:app)?\.com\/[^\s"'<>]+/i);
+  if (fallbackMatch && !fallbackMatch[0].endsWith('discord.com/')) {
+    return fallbackMatch[0].replace(/&amp;/g, '&').trim();
+  }
+
+  return null;
+}
+
+function extractFromBody(body: string): { url: string | null; ip: string | null; location: string | null } {
   // Unescape backslashes and HTML entities first
   const cleanBody = body.replace(/\\/g, '').replace(/&amp;/g, '&');
 
-  for (const pattern of URL_PATTERNS) {
-    const match = cleanBody.match(pattern);
-    if (match) {
-      url = match[0].replace(/&amp;/g, '&').trim();
-      break;
-    }
-  }
-
-  // Also check href="..."
-  if (!url) {
-    const hrefMatch = cleanBody.match(/href=["'](https:\/\/[^"']*discord[^"']*)["']/i);
-    if (hrefMatch) {
-      url = hrefMatch[1].replace(/&amp;/g, '&').trim();
-    }
-  }
+  const url = extractVerificationUrl(cleanBody);
 
   const ipMatch = cleanBody.match(IP_PATTERN);
   const ip = ipMatch ? ipMatch[1].trim() : null;

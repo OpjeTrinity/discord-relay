@@ -28,6 +28,7 @@ export default function Home() {
   const [countdown, setCountdown] = useState(0);
   const [consumed, setConsumed] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -105,7 +106,7 @@ export default function Home() {
 
   const handleAuthorize = async () => {
     if (!authStatus?.url || !savedPin) return;
-    window.open(authStatus.url, '_blank', 'noopener,noreferrer');
+    window.open(authStatus.url, '_blank', 'noopener');
     setConsumed(true);
     setAuthStatus({ active: false });
     if (countdownRef.current) clearInterval(countdownRef.current);
@@ -117,6 +118,13 @@ export default function Home() {
     } catch {
       // best-effort
     }
+  };
+
+  const handleCopyLink = () => {
+    if (!authStatus?.url) return;
+    navigator.clipboard.writeText(authStatus.url);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
   };
 
   const handleCopyCode = (codeText: string) => {
@@ -356,18 +364,34 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Primary Action Button */}
-            <button
-              onClick={handleAuthorize}
-              className="w-full py-4 rounded-full font-bold text-base tracking-wide bg-[#b8c4ff] text-[#122878] hover:bg-[#c9d4ff] active:scale-[0.98] transition-all shadow-lg shadow-[#b8c4ff]/20 flex items-center justify-center gap-2.5"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-              {isGmailCode ? 'Open Verification Link' : 'Authorize Discord IP'}
-            </button>
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+              <button
+                onClick={handleAuthorize}
+                className="w-full sm:flex-1 py-4 rounded-full font-bold text-base tracking-wide bg-[#b8c4ff] text-[#122878] hover:bg-[#c9d4ff] active:scale-[0.98] transition-all shadow-lg shadow-[#b8c4ff]/20 flex items-center justify-center gap-2.5"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+                {isGmailCode ? 'Open Link' : 'Authorize Discord IP'}
+              </button>
+
+              {authStatus.url && (
+                <button
+                  onClick={handleCopyLink}
+                  className="w-full sm:w-auto px-5 py-4 rounded-full font-semibold text-sm bg-[#24272d] text-[#e2e2e9] hover:bg-[#2d3037] active:scale-[0.98] transition-all border border-[#33353a] flex items-center justify-center gap-2"
+                  title="Copy verification URL"
+                >
+                  <svg className="w-4 h-4 text-[#c3c6cf]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  {linkCopied ? 'Copied!' : 'Copy Link'}
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           /* Waiting / Listening State */
