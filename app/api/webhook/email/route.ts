@@ -47,18 +47,87 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let body: Record<string, unknown>;
+  let body: Record<string, unknown> = {};
+  const contentType = req.headers.get('content-type') || '';
+
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    if (contentType.includes('application/json')) {
+      body = await req.json();
+    } else if (
+      contentType.includes('multipart/form-data') ||
+      contentType.includes('application/x-www-form-urlencoded')
+    ) {
+      const formData = await req.formData();
+      formData.forEach((value, key) => {
+        body[key] = typeof value === 'string' ? value : value.name;
+      });
+    } else {
+      // Fallback try JSON
+      body = await req.json();
+    }
+  } catch (err) {
+    console.error('[webhook] Error parsing body:', err);
+    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 
-  // Support both CloudMailin and Mailgun payload shapes
-  const subject = (body.subject as string) ?? '';
-  const from = (body.from as string) ?? (body.sender as string) ?? '';
-  const htmlBody = (body.html as string) ?? (body['body-html'] as string) ?? '';
-  const plainBody = (body.plain as string) ?? (body['body-plain'] as string) ?? '';
+  // Support CloudMailin, Mailgun, and custom payload shapes
+  const headers = (body.headers as Record<string, unknown>) ?? {};
+  const envelope = (body.envelope as Record<string, unknown>) ?? {};
+
+  const subject = (
+    (body.subject as string) ??
+    (body.Subject as string) ??
+    (headers.subject as string) ??
+    (headers.Subject as string) ??
+    ''
+  ).trim();
+
+  const from = (
+    (body.from as string) ??
+    (body.sender as string) ??
+    (body.From as string) ??
+    (headers.from as string) ??
+    (headers.From as string) ??
+    (envelope.from as string) ??
+    ''
+  ).trim();
+  const htmlBody =
+    (body.html as string) ??
+    (body['body-html'] as string) ??
+    (body.Html as string) ??
+    '';
+  const plainBody =
+    (body.plain as string) ??
+    (body['body-plain'] as string) ??
+    (body.Plain as string) ??
+    (body.stripped_text as string) ??
+    '';
+
+  // Handle Gmail forwarding verification email if received
+  if (
+    from.toLowerCase().includes('google.com') ||
+    subject.toLowerCase().includes('forwarding confirmation') ||
+    plainBody.includes('confirmation code')
+  ) {
+    const codeMatch =
+      plainBody.match(/confirmation code is:?\s*([0-9]+)/i) ||
+      htmlBody.match(/confirmation code is:?\s*([0-9]+)/i);
+    const code = codeMatch ? codeMatch[1] : null;
+
+    console.log('[webhook] Gmail forwarding confirmation received! Code:', code || 'Check body');
+
+    if (code) {
+      const payload = {
+        url: `https://mail.google.com/`,
+        ip: `Gmail Code: ${code}`,
+        location: 'Enter this confirmation code in Gmail settings',
+        receivedAt: new Date().toISOString(),
+      };
+      await redis.set(REDIS_KEY, JSON.stringify(payload), { ex: TTL_SECONDS });
+    }
+
+    return NextResponse.json({ success: true, message: 'Gmail verification handled' });
+  }
 
   // Validate origin
   const isDiscordEmail =
@@ -67,7 +136,9 @@ export async function POST(req: NextRequest) {
     subject.toLowerCase().includes('verify') && subject.toLowerCase().includes('discord');
 
   if (!isDiscordEmail && !isVerificationEmail) {
-    return NextResponse.json({ error: 'Not a Discord verification email' }, { status: 422 });
+    console.log('[webhook] Ignored non-Discord email from:', from, 'Subject:', subject);
+    // Return 200 so Mailgun / CloudMailin does not treat it as a delivery failure / reject it
+    return NextResponse.json({ ignored: true, reason: 'Not a Discord verification email' }, { status: 200 });
   }
 
   // Try HTML first, fall back to plain text
@@ -77,8 +148,8 @@ export async function POST(req: NextRequest) {
   const finalExtraction = url ? { url, ip, location } : extractFromBody(plainBody);
 
   if (!finalExtraction.url) {
-    console.error('[webhook] No verification URL found in email body');
-    return NextResponse.json({ error: 'No verification URL found' }, { status: 422 });
+    console.error('[webhook] No verification URL found in Discord email body');
+    return NextResponse.json({ ignored: true, reason: 'No verification URL found' }, { status: 200 });
   }
 
   const payload = {
