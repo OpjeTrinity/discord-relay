@@ -14,6 +14,258 @@ interface AuthStatus {
 
 const POLL_INTERVAL = 1500; // 1.5 seconds
 
+type Language = 'en' | 'es' | 'hi' | 'pt' | 'fr' | 'de';
+
+const LANGUAGES: { code: Language; label: string; flag: string }[] = [
+  { code: 'en', label: 'English', flag: '🇺🇸' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+  { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
+  { code: 'pt', label: 'Português', flag: '🇧🇷' },
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+];
+
+const TRANSLATIONS: Record<Language, {
+  channelTitle: string;
+  channelSubtitle: string;
+  listening: string;
+  signOut: string;
+  welcomeBack: string;
+  pinSubtitle: string;
+  pinLabel: string;
+  pinPlaceholder: string;
+  pinError: string;
+  logIn: string;
+  verifying: string;
+  defaultPinNote: string;
+  discordSystem: string;
+  botBadge: string;
+  justNow: string;
+  newNotification: string;
+  htmlView: string;
+  plainText: string;
+  clearEmail: string;
+  gmailDetected: string;
+  copyCode: string;
+  copied: string;
+  from: string;
+  displayNote: string;
+  welcomeHeading: string;
+  welcomeSubtext: string;
+  waitingPill: string;
+}> = {
+  en: {
+    channelTitle: 'discord-auth-relay',
+    channelSubtitle: 'Realtime Inbox & Verification Stream',
+    listening: 'Listening (1.5s)',
+    signOut: 'Sign Out',
+    welcomeBack: 'Welcome back!',
+    pinSubtitle: 'Enter your access PIN to monitor the Discord Auth Relay.',
+    pinLabel: 'Access PIN',
+    pinPlaceholder: 'Enter PIN...',
+    pinError: 'Invalid access PIN.',
+    logIn: 'Log In',
+    verifying: 'Verifying...',
+    defaultPinNote: 'Default PIN:',
+    discordSystem: 'Discord System',
+    botBadge: 'BOT',
+    justNow: 'Just now',
+    newNotification: 'New Notification from Discord',
+    htmlView: 'HTML View',
+    plainText: 'Plain Text',
+    clearEmail: 'Clear Email',
+    gmailDetected: 'Gmail Confirmation Code Detected',
+    copyCode: 'Copy Code',
+    copied: 'Copied!',
+    from: 'From:',
+    displayNote: 'Displaying full unmodified email content',
+    welcomeHeading: 'Welcome to #discord-auth-relay!',
+    welcomeSubtext:
+      'This is the start of your relay. As soon as Discord sends a login verification email or Gmail sends a forward, the entire unmodified email will appear right here.',
+    waitingPill: 'Waiting for email from Discord... (polling active)',
+  },
+  es: {
+    channelTitle: 'discord-auth-relay',
+    channelSubtitle: 'Bandeja de entrada y flujo de verificación en tiempo real',
+    listening: 'Escuchando (1.5s)',
+    signOut: 'Cerrar sesión',
+    welcomeBack: '¡Te damos la bienvenida!',
+    pinSubtitle: 'Introduce tu PIN de acceso para monitorear el retransmisor de Discord.',
+    pinLabel: 'PIN DE ACCESO',
+    pinPlaceholder: 'Introduce el PIN...',
+    pinError: 'PIN de acceso no válido.',
+    logIn: 'Iniciar sesión',
+    verifying: 'Verificando...',
+    defaultPinNote: 'PIN predeterminado:',
+    discordSystem: 'Sistema de Discord',
+    botBadge: 'BOT',
+    justNow: 'Hace un momento',
+    newNotification: 'Nueva notificación de Discord',
+    htmlView: 'Vista HTML',
+    plainText: 'Texto sin formato',
+    clearEmail: 'Borrar correo',
+    gmailDetected: 'Código de confirmación de Gmail detectado',
+    copyCode: 'Copiar código',
+    copied: '¡Copiado!',
+    from: 'De:',
+    displayNote: 'Mostrando el contenido completo del correo sin modificaciones',
+    welcomeHeading: '¡Te damos la bienvenida a #discord-auth-relay!',
+    welcomeSubtext:
+      'Este es el inicio de tu retransmisor. En cuanto Discord envíe un correo de verificación o Gmail lo reenvíe, el correo completo aparecerá aquí mismo.',
+    waitingPill: 'Esperando correo de Discord... (escucha activa)',
+  },
+  hi: {
+    channelTitle: 'discord-auth-relay',
+    channelSubtitle: 'रीयल-टाइम इनबॉक्स और सत्यापन स्ट्रीम',
+    listening: 'सक्रिय (1.5s)',
+    signOut: 'साइन आउट',
+    welcomeBack: 'वापसी पर स्वागत है!',
+    pinSubtitle: 'डिस्कॉर्ड ऑथ रिले की निगरानी के लिए अपना सुरक्षा पिन दर्ज करें।',
+    pinLabel: 'सुरक्षा पिन (ACCESS PIN)',
+    pinPlaceholder: 'पिन दर्ज करें...',
+    pinError: 'अमान्य एक्सेस पिन।',
+    logIn: 'लॉग इन करें',
+    verifying: 'सत्यापित किया जा रहा है...',
+    defaultPinNote: 'डिफ़ॉल्ट पिन:',
+    discordSystem: 'डिस्कॉर्ड सिस्टम',
+    botBadge: 'BOT',
+    justNow: 'अभी-अभी',
+    newNotification: 'डिस्कॉर्ड से नई सूचना',
+    htmlView: 'HTML दृश्य',
+    plainText: 'सादा पाठ',
+    clearEmail: 'ईमेल हटाएं',
+    gmailDetected: 'जीमेल पुष्टिकरण कोड प्राप्त हुआ',
+    copyCode: 'कोड कॉपी करें',
+    copied: 'कॉपी हो गया!',
+    from: 'प्रेषक:',
+    displayNote: 'मूल और असंशोधित ईमेल प्रदर्शित किया जा रहा है',
+    welcomeHeading: '#discord-auth-relay में आपका स्वागत है!',
+    welcomeSubtext:
+      'यह आपके रिले की शुरुआत है। जैसे ही डिस्कॉर्ड सत्यापन ईमेल भेजेगा, पूरा ईमेल यहां प्रदर्शित होगा।',
+    waitingPill: 'डिस्कॉर्ड ईमेल की प्रतीक्षा कर रहा है...',
+  },
+  pt: {
+    channelTitle: 'discord-auth-relay',
+    channelSubtitle: 'Caixa de entrada e fluxo de verificação em tempo real',
+    listening: 'Escutando (1.5s)',
+    signOut: 'Sair',
+    welcomeBack: 'Boas-vindas de volta!',
+    pinSubtitle: 'Digite seu PIN de acesso para monitorar o Discord Auth Relay.',
+    pinLabel: 'PIN DE ACESSO',
+    pinPlaceholder: 'Digite o PIN...',
+    pinError: 'PIN de acesso inválido.',
+    logIn: 'Entrar',
+    verifying: 'Verificando...',
+    defaultPinNote: 'PIN padrão:',
+    discordSystem: 'Sistema do Discord',
+    botBadge: 'BOT',
+    justNow: 'Agora mesmo',
+    newNotification: 'Nova notificação do Discord',
+    htmlView: 'Visualização HTML',
+    plainText: 'Texto simples',
+    clearEmail: 'Limpar e-mail',
+    gmailDetected: 'Código de confirmação do Gmail detectado',
+    copyCode: 'Copiar código',
+    copied: 'Copiado!',
+    from: 'De:',
+    displayNote: 'Exibindo o conteúdo completo e original do e-mail',
+    welcomeHeading: 'Boas-vindas ao #discord-auth-relay!',
+    welcomeSubtext:
+      'Este é o início do seu relay. Assim que o Discord enviar um e-mail de verificação, o e-mail completo aparecerá aqui.',
+    waitingPill: 'Aguardando e-mail do Discord... (polling ativo)',
+  },
+  fr: {
+    channelTitle: 'discord-auth-relay',
+    channelSubtitle: 'Boîte de réception et flux de vérification en direct',
+    listening: 'En écoute (1.5s)',
+    signOut: 'Déconnexion',
+    welcomeBack: 'Bon retour !',
+    pinSubtitle: 'Saisissez votre code PIN pour surveiller le relais Discord.',
+    pinLabel: 'CODE PIN D\'ACCÈS',
+    pinPlaceholder: 'Entrez le code PIN...',
+    pinError: 'Code PIN invalide.',
+    logIn: 'Connexion',
+    verifying: 'Vérification...',
+    defaultPinNote: 'PIN par défaut :',
+    discordSystem: 'Système Discord',
+    botBadge: 'BOT',
+    justNow: 'À l\'instant',
+    newNotification: 'Nouvelle notification Discord',
+    htmlView: 'Vue HTML',
+    plainText: 'Texte brut',
+    clearEmail: 'Effacer l\'e-mail',
+    gmailDetected: 'Code de confirmation Gmail détecté',
+    copyCode: 'Copier le code',
+    copied: 'Copié !',
+    from: 'De :',
+    displayNote: 'Affichage du contenu complet de l\'e-mail sans modification',
+    welcomeHeading: 'Bienvenue sur #discord-auth-relay !',
+    welcomeSubtext:
+      'Voici le début de votre relais. Dès que Discord enverra un e-mail de vérification, le message entier s\'affichera ici.',
+    waitingPill: 'En attente d\'un e-mail de Discord...',
+  },
+  de: {
+    channelTitle: 'discord-auth-relay',
+    channelSubtitle: 'Echtzeit-Posteingang & Verifizierungsstream',
+    listening: 'Aktiv (1.5s)',
+    signOut: 'Abmelden',
+    welcomeBack: 'Willkommen zurück!',
+    pinSubtitle: 'Gib deine Zugangs-PIN ein, um den Discord-Auth-Relay zu überwachen.',
+    pinLabel: 'ZUGANGS-PIN',
+    pinPlaceholder: 'PIN eingeben...',
+    pinError: 'Ungültige PIN.',
+    logIn: 'Anmelden',
+    verifying: 'Wird überprüft...',
+    defaultPinNote: 'Standard-PIN:',
+    discordSystem: 'Discord-System',
+    botBadge: 'BOT',
+    justNow: 'Gerade eben',
+    newNotification: 'Neue Benachrichtigung von Discord',
+    htmlView: 'HTML-Ansicht',
+    plainText: 'Klartext',
+    clearEmail: 'E-Mail löschen',
+    gmailDetected: 'Gmail-Bestätigungscode erkannt',
+    copyCode: 'Code kopieren',
+    copied: 'Kopiert!',
+    from: 'Von:',
+    displayNote: 'Vollständiger, unveränderter E-Mail-Inhalt wird angezeigt',
+    welcomeHeading: 'Willkommen bei #discord-auth-relay!',
+    welcomeSubtext:
+      'Dies ist der Anfang deines Relays. Sobald Discord eine E-Mail sendet, wird sie hier angezeigt.',
+    waitingPill: 'Warte auf Discord-E-Mail...',
+  },
+};
+
+function detectLocationLanguage(): Language {
+  if (typeof window === 'undefined') return 'en';
+
+  const saved = localStorage.getItem('discord_relay_lang') as Language;
+  if (saved && TRANSLATIONS[saved]) return saved;
+
+  // 1. Browser language detection
+  const browserLang = (navigator.language || '').toLowerCase();
+  if (browserLang.startsWith('es')) return 'es';
+  if (browserLang.startsWith('hi')) return 'hi';
+  if (browserLang.startsWith('pt')) return 'pt';
+  if (browserLang.startsWith('fr')) return 'fr';
+  if (browserLang.startsWith('de')) return 'de';
+
+  // 2. Timezone / Location detection for Spanish countries
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    const spanishTimezones = [
+      'Madrid', 'Buenos_Aires', 'Bogota', 'Mexico', 'Santiago', 'Lima', 'Caracas',
+      'Montevideo', 'La_Paz', 'Asuncion', 'Guayaquil', 'Panama', 'San_Jose', 'Guatemala',
+      'Havana', 'Santo_Domingo', 'Tegucigalpa', 'Managua', 'San_Salvador'
+    ];
+    if (spanishTimezones.some((stz) => tz.includes(stz))) return 'es';
+  } catch {
+    // ignore
+  }
+
+  return 'en';
+}
+
 function DiscordLogo({ size = 24 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 71 55" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -26,6 +278,7 @@ function DiscordLogo({ size = 24 }: { size?: number }) {
 }
 
 export default function Home() {
+  const [lang, setLang] = useState<Language>('en');
   const [pin, setPin] = useState('');
   const [savedPin, setSavedPin] = useState<string | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
@@ -36,10 +289,21 @@ export default function Home() {
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Initialize Language based on location/locale on mount
   useEffect(() => {
+    const detected = detectLocationLanguage();
+    setLang(detected);
+
     const stored = localStorage.getItem('discord_relay_pin');
     if (stored) setSavedPin(stored);
   }, []);
+
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+
+  const handleLanguageChange = (newLang: Language) => {
+    setLang(newLang);
+    localStorage.setItem('discord_relay_lang', newLang);
+  };
 
   const pollStatus = useCallback(async (currentPin: string) => {
     try {
@@ -50,15 +314,26 @@ export default function Home() {
       if (res.status === 401) {
         setSavedPin(null);
         localStorage.removeItem('discord_relay_pin');
-        setPinError('Invalid access PIN.');
+        setPinError(t.pinError);
         return;
       }
       const data: AuthStatus = await res.json();
       setAuthStatus(data);
+
+      // Auto-switch to Spanish if email subject/body is in Spanish and user hasn't explicitly set a language
+      if (data.active && data.subject) {
+        const subjectLower = data.subject.toLowerCase();
+        if (
+          (subjectLower.includes('verifica') || subjectLower.includes('sesión') || subjectLower.includes('ubicación')) &&
+          !localStorage.getItem('discord_relay_lang')
+        ) {
+          setLang('es');
+        }
+      }
     } catch {
       // silently retry
     }
-  }, []);
+  }, [t.pinError]);
 
   useEffect(() => {
     if (!savedPin) {
@@ -113,29 +388,47 @@ export default function Home() {
   // ─────────────────────────────────────────────────────────────
   if (!savedPin) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-4 bg-[#1E1F22]">
+      <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#1E1F22] text-[#DBDEE1]">
+        {/* Language selector on login screen */}
+        <div className="w-full max-w-[480px] flex justify-end mb-3">
+          <div className="flex items-center gap-1.5 bg-[#2B2D31] px-2 py-1 rounded text-xs border border-[#383A40]">
+            <span className="text-sm">🌐</span>
+            <select
+              value={lang}
+              onChange={(e) => handleLanguageChange(e.target.value as Language)}
+              className="bg-transparent text-[#DBDEE1] outline-none text-xs cursor-pointer"
+            >
+              {LANGUAGES.map((item) => (
+                <option key={item.code} value={item.code} className="bg-[#2B2D31] text-white">
+                  {item.flag} {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div className="w-full max-w-[480px] rounded-lg p-8 bg-[#313338] shadow-2xl border border-[#383A40]">
           {/* Header */}
           <div className="flex flex-col items-center text-center mb-6">
             <DiscordLogo size={48} />
             <h1 className="text-2xl font-bold text-[#F2F3F5] tracking-tight mt-4">
-              Welcome back!
+              {t.welcomeBack}
             </h1>
             <p className="text-sm text-[#B5BAC1] mt-1">
-              Enter your access PIN to monitor the Discord Auth Relay.
+              {t.pinSubtitle}
             </p>
           </div>
 
           <form onSubmit={handlePinSubmit} className="space-y-4">
             <div>
               <label className="block text-[11px] font-bold text-[#B5BAC1] uppercase tracking-wider mb-2">
-                Access PIN <span className="text-[#F23F43]">*</span>
+                {t.pinLabel} <span className="text-[#F23F43]">*</span>
               </label>
               <input
                 type="password"
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                placeholder="Enter PIN..."
+                placeholder={t.pinPlaceholder}
                 autoFocus
                 className="w-full rounded-[4px] px-3 py-2.5 text-base text-[#F2F3F5] bg-[#1E1F22] border border-[#2B2D31] focus:border-[#5865F2] outline-none transition-colors placeholder:text-[#4E5058]"
               />
@@ -149,12 +442,12 @@ export default function Home() {
               disabled={isLoading || !pin.trim()}
               className="w-full py-2.5 rounded-[4px] font-medium text-sm text-white bg-[#5865F2] hover:bg-[#4752C4] active:bg-[#3C45A5] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Verifying...' : 'Log In'}
+              {isLoading ? t.verifying : t.logIn}
             </button>
           </form>
 
           <p className="text-xs text-[#949BA4] text-center mt-6">
-            Default PIN: <code className="bg-[#1E1F22] px-1.5 py-0.5 rounded text-[#DBDEE1]">changeme</code> (configured in <code className="text-[#5865F2]">.env.local</code>)
+            {t.defaultPinNote} <code className="bg-[#1E1F22] px-1.5 py-0.5 rounded text-[#DBDEE1]">changeme</code> (<code className="text-[#5865F2]">.env.local</code>)
           </p>
         </div>
       </main>
@@ -170,23 +463,39 @@ export default function Home() {
       <header className="h-12 bg-[#2B2D31] border-b border-[#1F2023] px-4 flex items-center justify-between shadow-sm sticky top-0 z-30">
         <div className="flex items-center gap-2.5">
           <span className="text-[#80848E] font-bold text-xl">#</span>
-          <span className="font-semibold text-white text-sm tracking-wide">discord-auth-relay</span>
+          <span className="font-semibold text-white text-sm tracking-wide">{t.channelTitle}</span>
           <span className="text-xs text-[#949BA4] hidden sm:inline-block border-l border-[#3F4147] pl-2.5 ml-1">
-            Realtime Inbox &amp; Verification Stream
+            {t.channelSubtitle}
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded bg-[#1E1F22] text-xs">
+        <div className="flex items-center gap-2.5">
+          {/* Language Selector Dropdown */}
+          <div className="flex items-center gap-1 bg-[#1E1F22] px-2 py-1 rounded text-xs border border-[#383A40]">
+            <span className="text-xs">🌐</span>
+            <select
+              value={lang}
+              onChange={(e) => handleLanguageChange(e.target.value as Language)}
+              className="bg-transparent text-[#DBDEE1] outline-none text-xs cursor-pointer font-medium"
+            >
+              {LANGUAGES.map((item) => (
+                <option key={item.code} value={item.code} className="bg-[#2B2D31] text-white">
+                  {item.flag} {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded bg-[#1E1F22] text-xs">
             <span className="w-2 h-2 rounded-full bg-[#23A55A] animate-pulse" />
-            <span className="text-[#949BA4]">Listening (1.5s)</span>
+            <span className="text-[#949BA4]">{t.listening}</span>
           </div>
 
           <button
             onClick={handleLogout}
             className="px-2.5 py-1 rounded text-xs font-medium bg-[#35373C] hover:bg-[#3F4147] text-[#DBDEE1] transition-colors"
           >
-            Sign Out
+            {t.signOut}
           </button>
         </div>
       </header>
@@ -204,16 +513,16 @@ export default function Home() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-white text-base">Discord System</span>
+                    <span className="font-bold text-white text-base">{t.discordSystem}</span>
                     <span className="bg-[#5865F2] text-white text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
-                      BOT
+                      {t.botBadge}
                     </span>
                     <span className="text-xs text-[#949BA4]">
-                      {authStatus.receivedAt ? new Date(authStatus.receivedAt).toLocaleTimeString() : 'Just now'}
+                      {authStatus.receivedAt ? new Date(authStatus.receivedAt).toLocaleTimeString() : t.justNow}
                     </span>
                   </div>
                   <p className="text-sm text-[#DBDEE1] font-medium mt-0.5">
-                    {authStatus.subject ?? 'New Notification from Discord'}
+                    {authStatus.subject ?? t.newNotification}
                   </p>
                 </div>
               </div>
@@ -229,7 +538,7 @@ export default function Home() {
                         : 'text-[#949BA4] hover:text-white'
                     }`}
                   >
-                    HTML View
+                    {t.htmlView}
                   </button>
                   <button
                     onClick={() => setViewMode('plain')}
@@ -239,7 +548,7 @@ export default function Home() {
                         : 'text-[#949BA4] hover:text-white'
                     }`}
                   >
-                    Plain Text
+                    {t.plainText}
                   </button>
                 </div>
 
@@ -247,7 +556,7 @@ export default function Home() {
                   onClick={handleClear}
                   className="px-3 py-1.5 rounded text-xs font-medium bg-[#DA373C] hover:bg-[#A12828] text-white transition-colors"
                 >
-                  Clear Email
+                  {t.clearEmail}
                 </button>
               </div>
             </div>
@@ -257,7 +566,7 @@ export default function Home() {
               <div className="bg-[#2B2D31] border-l-4 border-l-[#23A55A] p-4 rounded-r-lg flex items-center justify-between gap-4">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#23A55A]">
-                    Gmail Confirmation Code Detected
+                    {t.gmailDetected}
                   </span>
                   <div className="text-xl font-mono font-bold text-white mt-1">
                     {authStatus.code}
@@ -267,7 +576,7 @@ export default function Home() {
                   onClick={() => handleCopyCode(authStatus.code || '')}
                   className="px-4 py-2 rounded font-medium text-sm text-white bg-[#23A55A] hover:bg-[#1C8B4C] transition-colors"
                 >
-                  {copied ? 'Copied!' : 'Copy Code'}
+                  {copied ? t.copied : t.copyCode}
                 </button>
               </div>
             )}
@@ -276,10 +585,10 @@ export default function Home() {
             <div className="bg-[#2B2D31] rounded-lg border-l-4 border-l-[#5865F2] border border-[#383A40] shadow-xl overflow-hidden">
               <div className="px-4 py-3 bg-[#242629] border-b border-[#313338] flex items-center justify-between text-xs text-[#949BA4]">
                 <div>
-                  <span className="font-semibold text-[#DBDEE1]">From:</span> {authStatus.from ?? 'Discord <noreply@discord.com>'}
+                  <span className="font-semibold text-[#DBDEE1]">{t.from}</span> {authStatus.from ?? 'Discord <noreply@discord.com>'}
                 </div>
                 <div className="italic">
-                  Displaying full unmodified email content
+                  {t.displayNote}
                 </div>
               </div>
 
@@ -309,15 +618,15 @@ export default function Home() {
             </div>
 
             <h2 className="text-2xl font-bold text-white tracking-tight">
-              Welcome to #discord-auth-relay!
+              {t.welcomeHeading}
             </h2>
             <p className="text-sm text-[#949BA4] max-w-md mt-2 leading-relaxed">
-              This is the start of your relay. As soon as Discord sends a login verification email or Gmail sends a forward, the <strong>entire unmodified email</strong> will appear right here.
+              {t.welcomeSubtext}
             </p>
 
             <div className="mt-8 flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#2B2D31] border border-[#383A40] text-xs font-medium text-[#DBDEE1]">
               <span className="w-2.5 h-2.5 rounded-full bg-[#23A55A] animate-ping" />
-              <span>Waiting for email from Discord... (polling active)</span>
+              <span>{t.waitingPill}</span>
             </div>
           </div>
         )}
