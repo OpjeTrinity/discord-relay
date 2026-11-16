@@ -14,11 +14,31 @@ const URL_PATTERNS = [
   /https:\/\/[a-z0-9.-]*discord(?:app)?\.com\/[^\s"'<>]+/i,
 ];
 
-const IP_PATTERN = /(?:IP(?:\s*Address)?|IP)[:\s]+([0-9]{1,3}(?:\.[0-9]{1,3}){3}(?::[0-9]+)?)/i;
-const LOCATION_PATTERN = /(?:Location|Near)[:\s]+([^\n\r<]+?)(?:\s*<|\s*\n|\s*\r|$)/i;
+const IP_PATTERN = /(?:Direcci[oó]n\s+IP|IP(?:\s*Address)?|IP)[:\s]+([0-9]{1,3}(?:\.[0-9]{1,3}){3}(?::[0-9]+)?)/i;
+const LOCATION_PATTERN = /(?:Location|Near|Ubicaci[oó]n|Lieu|Ort)[:\s]+([^\n\r<]+?)(?:\s*<|\s*\n|\s*\r|$)/i;
 
 function extractVerificationUrl(cleanBody: string): string | null {
-  // 1. Direct authorize-ip or token URL (highest priority & accuracy)
+  // 1. Target the primary Blue/Blurple (#5865F2) action button in Discord's HTML template
+  const blurpleButtonMatch =
+    cleanBody.match(
+      /<(?:td|a|table)\b[^>]*(?:bgcolor=["']?#5865F2|background(?:-color)?:\s*#5865F2)[^>]*>[\s\S]{0,400}?<a\b[^>]*\bhref=["'](https:\/\/[^"']+)["']/i
+    ) ||
+    cleanBody.match(
+      /<a\b[^>]*\bhref=["'](https:\/\/[^"']+)["'][^>]*(?:bgcolor=["']?#5865F2|background(?:-color)?:\s*#5865F2)/i
+    );
+  if (blurpleButtonMatch) {
+    return blurpleButtonMatch[1].replace(/&amp;/g, '&').trim();
+  }
+
+  // 2. Target anchor tag with multi-language verification text (Verificar, Verify, Vérifier, Autorizar, etc.)
+  const ctaMatch = cleanBody.match(
+    /<a\b[^>]*\bhref=["'](https:\/\/[^"']+)["'][^>]*>(?:(?!<\/a>)[\s\S])*(?:Verif|Autoriz|Authoriz|inicio de sesi|iniciar sesi|confirm)(?:(?!<\/a>)[\s\S])*<\/a>/i
+  );
+  if (ctaMatch) {
+    return ctaMatch[1].replace(/&amp;/g, '&').trim();
+  }
+
+  // 3. Direct authorize-ip or token URL
   const directMatch =
     cleanBody.match(/https:\/\/(?:[a-z0-9.-]+\.)?discord(?:app)?\.com\/(?:authorize-ip|verify|ra)[^\s"'<>]*/i) ||
     cleanBody.match(/https:\/\/[^\s"'<>]*token=[a-zA-Z0-9._-]+/i);
@@ -26,36 +46,30 @@ function extractVerificationUrl(cleanBody: string): string | null {
     return directMatch[0].replace(/&amp;/g, '&').trim();
   }
 
-  // 2. Anchor tag whose button text is "Verify" or "Authorize" (skips the logo link)
-  const ctaMatch = cleanBody.match(
-    /<a\b[^>]*\bhref=["'](https:\/\/[^"']+)["'][^>]*>(?:(?!<\/a>)[\s\S])*(?:Verify|Authorize)(?:(?!<\/a>)[\s\S])*<\/a>/i
-  );
-  if (ctaMatch) {
-    return ctaMatch[1].replace(/&amp;/g, '&').trim();
-  }
-
-  // 3. Link following text like "Verify Login", "Authorize Login", or "button below"
+  // 4. Link following text like "Verificar inicio de sesión", "Verify Login", "autorizar"
   const followingMatch = cleanBody.match(
-    /(?:Verify Login|Authorize Login|Authorize IP|clicking the button below)[\s\S]{0,350}?(https:\/\/(?:click\.discord\.com|discord\.com|email\.discord\.com)[^\s"'<>]+)/i
+    /(?:Verificar inicio de sesión|Verify Login|Authorize Login|Authorize IP|autorizar el inicio de sesión)[\s\S]{0,350}?(https:\/\/(?:click\.discord\.com|discord\.com|email\.discord\.com)[^\s"'<>]+)/i
   );
   if (followingMatch) {
     return followingMatch[1].replace(/&amp;/g, '&').trim();
   }
 
-  // 4. Multiple SendGrid tracking links:
-  // Link 1 is almost always the header logo (<img alt="Discord">), Link 2 is the primary CTA button!
+  // 5. If multiple SendGrid click links exist:
+  // Link 1 is header logo, Link 2 is reset password, Link 3 is the blue button!
   const allClickLinks = Array.from(
     cleanBody.matchAll(/https:\/\/click\.discord\.com\/ls\/click\?[^\s"'<>]+/gi)
   ).map((m) => m[0].replace(/&amp;/g, '&').trim());
 
-  if (allClickLinks.length > 1) {
-    // If one of the links is near "verify", pick it; otherwise pick Link 2 (the action button)
+  if (allClickLinks.length >= 3) {
+    // Return Link 3 (the blue CTA button)
+    return allClickLinks[2];
+  } else if (allClickLinks.length === 2) {
     return allClickLinks[1];
   } else if (allClickLinks.length === 1) {
     return allClickLinks[0];
   }
 
-  // 5. Any generic Discord link as fallback (avoiding bare root domain)
+  // 6. Generic Discord link fallback (skipping bare root domain)
   const fallbackMatch = cleanBody.match(/https:\/\/(?:click\.|email\.)?discord(?:app)?\.com\/[^\s"'<>]+/i);
   if (fallbackMatch && !fallbackMatch[0].endsWith('discord.com/')) {
     return fallbackMatch[0].replace(/&amp;/g, '&').trim();
