@@ -107,26 +107,35 @@ export async function POST(req: NextRequest) {
   if (
     from.toLowerCase().includes('google.com') ||
     subject.toLowerCase().includes('forwarding confirmation') ||
-    plainBody.includes('confirmation code')
+    plainBody.toLowerCase().includes('confirmation code') ||
+    htmlBody.toLowerCase().includes('confirmation code')
   ) {
+    const combined = plainBody + ' ' + htmlBody;
     const codeMatch =
-      plainBody.match(/confirmation code is:?\s*([0-9]+)/i) ||
-      htmlBody.match(/confirmation code is:?\s*([0-9]+)/i);
+      combined.match(/confirmation code(?:\s+is)?[:\s]+([0-9]+)/i) ||
+      combined.match(/([0-9]{8,10})/);
     const code = codeMatch ? codeMatch[1] : null;
 
-    console.log('[webhook] Gmail forwarding confirmation received! Code:', code || 'Check body');
+    const verifyUrlMatch = combined.match(/https:\/\/mail-settings\.google\.com\/mail\/vf-[^\s"'<>]+/);
+    const verifyUrl = verifyUrlMatch ? verifyUrlMatch[0].replace(/&amp;/g, '&') : null;
 
-    if (code) {
+    console.log('[webhook] Gmail forwarding received! Code:', code, 'URL:', verifyUrl);
+
+    if (code || verifyUrl) {
       const payload = {
-        url: `https://mail.google.com/`,
-        ip: `Gmail Code: ${code}`,
-        location: 'Enter this confirmation code in Gmail settings',
+        url: verifyUrl ?? 'https://mail.google.com/',
+        ip: code ? `Gmail Code: ${code}` : 'Gmail Verification Link',
+        location: 'Forwarding Confirmation received from Google',
         receivedAt: new Date().toISOString(),
       };
-      await redis.set(REDIS_KEY, JSON.stringify(payload), { ex: TTL_SECONDS });
+      try {
+        await redis.set(REDIS_KEY, JSON.stringify(payload), { ex: TTL_SECONDS });
+      } catch (err) {
+        console.error('[webhook] Redis set error:', err);
+      }
     }
 
-    return NextResponse.json({ success: true, message: 'Gmail verification handled' });
+    return NextResponse.json({ success: true, message: 'Gmail verification handled', code, verifyUrl });
   }
 
   // Validate origin
