@@ -10,7 +10,7 @@ interface AuthStatus {
   receivedAt?: string;
 }
 
-const POLL_INTERVAL = 4000;
+const POLL_INTERVAL = 1500;
 const TTL_SECONDS = 900;
 
 function formatCountdown(seconds: number): string {
@@ -56,6 +56,7 @@ export default function Home() {
     try {
       const res = await fetch('/api/auth-status', {
         headers: { 'x-access-pin': currentPin },
+        cache: 'no-store',
       });
       if (res.status === 401) {
         setSavedPin(null);

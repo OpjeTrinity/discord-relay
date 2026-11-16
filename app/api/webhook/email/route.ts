@@ -3,28 +3,46 @@ import { redis, REDIS_KEY, TTL_SECONDS } from '@/lib/redis';
 
 // Discord verification URL patterns
 const URL_PATTERNS = [
-  /https:\/\/click\.discord\.com\/ls\/click\?upn=[^\s"'<>]+/,
-  /https:\/\/discord\.com\/authorize-ip[^\s"'<>]+/,
-  /https:\/\/discord\.com\/verify[^\s"'<>]+/,
+  /https:\/\/click\.discord\.com\/ls\/click\?[^\s"'<>]+/i,
+  /https:\/\/click\.discord\.com\/[^\s"'<>]+/i,
+  /https:\/\/email\.discord\.com\/[^\s"'<>]+/i,
+  /https:\/\/discord\.com\/ra\/[^\s"'<>]+/i,
+  /https:\/\/discord\.com\/authorize-ip[^\s"'<>]+/i,
+  /https:\/\/discord\.com\/verify[^\s"'<>]+/i,
+  /https:\/\/discordapp\.com\/authorize-ip[^\s"'<>]+/i,
+  /https:\/\/discordapp\.com\/verify[^\s"'<>]+/i,
+  /https:\/\/[a-z0-9.-]*discord(?:app)?\.com\/[^\s"'<>]+/i,
 ];
 
-const IP_PATTERN = /IP Address[:\s]+([0-9]{1,3}(?:\.[0-9]{1,3}){3}(?::[0-9]+)?)/i;
-const LOCATION_PATTERN = /Location[:\s]+([^\n\r<]+?)(?:\s*<|\s*\n|\s*\r)/i;
+const IP_PATTERN = /(?:IP(?:\s*Address)?|IP)[:\s]+([0-9]{1,3}(?:\.[0-9]{1,3}){3}(?::[0-9]+)?)/i;
+const LOCATION_PATTERN = /(?:Location|Near)[:\s]+([^\n\r<]+?)(?:\s*<|\s*\n|\s*\r|$)/i;
 
 function extractFromBody(body: string): { url: string | null; ip: string | null; location: string | null } {
   let url: string | null = null;
+
+  // Unescape backslashes and HTML entities first
+  const cleanBody = body.replace(/\\/g, '').replace(/&amp;/g, '&');
+
   for (const pattern of URL_PATTERNS) {
-    const match = body.match(pattern);
+    const match = cleanBody.match(pattern);
     if (match) {
       url = match[0].replace(/&amp;/g, '&').trim();
       break;
     }
   }
 
-  const ipMatch = body.match(IP_PATTERN);
+  // Also check href="..."
+  if (!url) {
+    const hrefMatch = cleanBody.match(/href=["'](https:\/\/[^"']*discord[^"']*)["']/i);
+    if (hrefMatch) {
+      url = hrefMatch[1].replace(/&amp;/g, '&').trim();
+    }
+  }
+
+  const ipMatch = cleanBody.match(IP_PATTERN);
   const ip = ipMatch ? ipMatch[1].trim() : null;
 
-  const locationMatch = body.match(LOCATION_PATTERN);
+  const locationMatch = cleanBody.match(LOCATION_PATTERN);
   const location = locationMatch ? locationMatch[1].trim() : null;
 
   return { url, ip, location };
@@ -153,39 +171,48 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, message: 'Gmail verification handled', code, verifyUrl });
   }
 
-  // Validate origin
+  // Validate Discord email (broad detection so no notification is dropped)
   const isDiscordEmail =
-    from.toLowerCase().includes('discord.com') || from.toLowerCase().includes('noreply@discord');
-  const isVerificationEmail =
-    subject.toLowerCase().includes('verify') && subject.toLowerCase().includes('discord');
+    from.toLowerCase().includes('discord') ||
+    subject.toLowerCase().includes('discord') ||
+    subject.toLowerCase().includes('login location') ||
+    subject.toLowerCase().includes('authorize') ||
+    combinedText.toLowerCase().includes('discord.com');
 
-  if (!isDiscordEmail && !isVerificationEmail) {
+  if (!isDiscordEmail) {
     console.log('[webhook] Ignored non-Discord email from:', from, 'Subject:', subject);
-    // Return 200 so Mailgun / CloudMailin does not treat it as a delivery failure / reject it
-    return NextResponse.json({ ignored: true, reason: 'Not a Discord verification email' }, { status: 200 });
+    return NextResponse.json({ ignored: true, reason: 'Not recognized as a Discord email' }, { status: 200 });
   }
 
-  // Try HTML first, fall back to plain text
-  const searchText = decodeHtmlEntities(htmlBody || plainBody);
-  const { url, ip, location } = extractFromBody(searchText);
+  // Try HTML first, fall back to plain text, and search whole payload
+  const searchText = decodeHtmlEntities(htmlBody || plainBody || combinedText);
+  const extraction = extractFromBody(searchText);
 
-  const finalExtraction = url ? { url, ip, location } : extractFromBody(plainBody);
-
-  if (!finalExtraction.url) {
-    console.error('[webhook] No verification URL found in Discord email body');
-    return NextResponse.json({ ignored: true, reason: 'No verification URL found' }, { status: 200 });
+  let finalUrl = extraction.url;
+  if (!finalUrl) {
+    // Search combined payload text for any Discord link
+    for (const pattern of URL_PATTERNS) {
+      const match = combinedText.match(pattern);
+      if (match) {
+        finalUrl = match[0].replace(/\\/g, '').replace(/&amp;/g, '&').trim();
+        break;
+      }
+    }
   }
 
   const payload = {
-    url: finalExtraction.url,
-    ip: finalExtraction.ip ?? 'Unknown',
-    location: finalExtraction.location ?? 'Unknown',
+    url: finalUrl ?? 'https://discord.com/login',
+    ip: extraction.ip ?? 'Discord Security Alert',
+    location: extraction.location ?? (subject || 'New location detected'),
     receivedAt: new Date().toISOString(),
   };
 
-  await redis.set(REDIS_KEY, JSON.stringify(payload), { ex: TTL_SECONDS });
+  try {
+    await redis.set(REDIS_KEY, JSON.stringify(payload), { ex: TTL_SECONDS });
+    console.log('[webhook] Stored Discord auth payload:', JSON.stringify({ ...payload, url: finalUrl ? '[FOUND]' : '[DEFAULT]' }));
+  } catch (err) {
+    console.error('[webhook] Redis set error:', err);
+  }
 
-  console.log('[webhook] Stored Discord auth payload:', JSON.stringify({ ...payload, url: '[REDACTED]' }));
-
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, urlFound: !!finalUrl });
 }
