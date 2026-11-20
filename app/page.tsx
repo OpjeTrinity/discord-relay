@@ -584,16 +584,6 @@ export default function Home() {
           onClose={() => setIsTutorialOpen(false)}
           title={t.tutorialTitle}
           subtitle={t.tutorialSubtitle}
-          steps={{
-            step1Title: t.step1Title,
-            step1Desc: t.step1Desc,
-            step2Title: t.step2Title,
-            step2Desc: t.step2Desc,
-            step3Title: t.step3Title,
-            step3Desc: t.step3Desc,
-          }}
-          tipText={t.modalTip}
-          doneText={t.modalDone}
         />
       </main>
     );
@@ -783,57 +773,22 @@ export default function Home() {
               <span>{t.waitingPill}</span>
             </div>
 
-            {/* Embedded Tutorial Video Section */}
-            <div className="mt-10 w-full max-w-3xl bg-[#2B2D31] rounded-xl border border-[#383A40] p-4 sm:p-5 text-left shadow-xl">
-              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-[#5865F2] flex items-center justify-center text-white shrink-0">
-                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white">{t.tutorialTitle}</h3>
-                    <p className="text-xs text-[#949BA4]">{t.tutorialSubtitle}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setIsTutorialOpen(true)}
-                    className="text-xs text-[#5865F2] hover:text-[#4752C4] font-medium hover:underline flex items-center gap-1"
-                  >
-                    <span>Expand / Popout</span>
-                    <span>↗</span>
-                  </button>
-                </div>
+            {/* Small Compact Tutorial Video Frame */}
+            <div className="mt-8 w-full max-w-[380px] flex flex-col items-center">
+              <div className="w-full flex items-center justify-between mb-2 px-1">
+                <span className="text-xs text-[#949BA4] font-medium flex items-center gap-1.5">
+                  <span>📺</span>
+                  <span>{t.tutorialTitle}</span>
+                </span>
+                <button
+                  onClick={() => setIsTutorialOpen(true)}
+                  className="text-[11px] text-[#5865F2] hover:text-[#4752C4] hover:underline"
+                >
+                  Popout ↗
+                </button>
               </div>
 
-              <TutorialVideoPlayer
-                src="/tutorial.mp4"
-                title={t.tutorialTitle}
-              />
-
-              {/* 3 Step Walkthrough Cards */}
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-[#DBDEE1]">
-                <div className="bg-[#1E1F22] p-3 rounded-lg border border-[#383A40]">
-                  <span className="font-bold text-[#5865F2] block mb-1">{t.step1Title}</span>
-                  <p className="text-[#949BA4] text-[11px] leading-relaxed">
-                    {t.step1Desc}
-                  </p>
-                </div>
-                <div className="bg-[#1E1F22] p-3 rounded-lg border border-[#383A40]">
-                  <span className="font-bold text-[#23A55A] block mb-1">{t.step2Title}</span>
-                  <p className="text-[#949BA4] text-[11px] leading-relaxed">
-                    {t.step2Desc}
-                  </p>
-                </div>
-                <div className="bg-[#1E1F22] p-3 rounded-lg border border-[#383A40]">
-                  <span className="font-bold text-[#F0B232] block mb-1">{t.step3Title}</span>
-                  <p className="text-[#949BA4] text-[11px] leading-relaxed">
-                    {t.step3Desc}
-                  </p>
-                </div>
-              </div>
+              <TutorialVideoPlayer src="/tutorial.mp4" />
             </div>
           </div>
         )}
@@ -845,16 +800,6 @@ export default function Home() {
         onClose={() => setIsTutorialOpen(false)}
         title={t.tutorialTitle}
         subtitle={t.tutorialSubtitle}
-        steps={{
-          step1Title: t.step1Title,
-          step1Desc: t.step1Desc,
-          step2Title: t.step2Title,
-          step2Desc: t.step2Desc,
-          step3Title: t.step3Title,
-          step3Desc: t.step3Desc,
-        }}
-        tipText={t.modalTip}
-        doneText={t.modalDone}
       />
     </div>
   );
