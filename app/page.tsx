@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import TutorialVideoPlayer from './components/TutorialVideoPlayer';
+import TutorialModal from './components/TutorialModal';
 
 interface AuthStatus {
   active: boolean;
@@ -53,6 +55,17 @@ const TRANSLATIONS: Record<Language, {
   welcomeHeading: string;
   welcomeSubtext: string;
   waitingPill: string;
+  watchTutorial: string;
+  tutorialTitle: string;
+  tutorialSubtitle: string;
+  step1Title: string;
+  step1Desc: string;
+  step2Title: string;
+  step2Desc: string;
+  step3Title: string;
+  step3Desc: string;
+  modalTip: string;
+  modalDone: string;
 }> = {
   en: {
     channelTitle: 'discord-auth-relay',
@@ -83,6 +96,17 @@ const TRANSLATIONS: Record<Language, {
     welcomeSubtext:
       'This is the start of your relay. As soon as Discord sends a login verification email or Gmail sends a forward, the entire unmodified email will appear right here.',
     waitingPill: 'Waiting for email from Discord... (polling active)',
+    watchTutorial: 'Watch Tutorial Video',
+    tutorialTitle: 'Tutorial: How to use Discord Auth Relay',
+    tutorialSubtitle: 'Screen record tutorial on how this relay works.',
+    step1Title: '1. Enter Access PIN',
+    step1Desc: 'Enter the PIN to open the live Discord authentication relay stream.',
+    step2Title: '2. Log in to Discord',
+    step2Desc: 'Attempt to log in to Discord. Discord will send a verification email.',
+    step3Title: '3. Click "Verify Login"',
+    step3Desc: 'The email appears here immediately. Click "Verify Login" (Verificar inicio de sesión) or copy code.',
+    modalTip: 'Tip: You can adjust playback speed with the ⚡ Speed button.',
+    modalDone: 'Got it',
   },
   es: {
     channelTitle: 'discord-auth-relay',
@@ -113,6 +137,17 @@ const TRANSLATIONS: Record<Language, {
     welcomeSubtext:
       'Este es el inicio de tu retransmisor. En cuanto Discord envíe un correo de verificación o Gmail lo reenvíe, el correo completo aparecerá aquí mismo.',
     waitingPill: 'Esperando correo de Discord... (escucha activa)',
+    watchTutorial: 'Ver video tutorial',
+    tutorialTitle: 'Tutorial: Cómo usar Discord Auth Relay',
+    tutorialSubtitle: 'Grabación de pantalla paso a paso de cómo funciona este relay.',
+    step1Title: '1. Ingresa el PIN de acceso',
+    step1Desc: 'Introduce el PIN para abrir la transmisión en vivo de verificación de Discord.',
+    step2Title: '2. Inicia sesión en Discord',
+    step2Desc: 'Intenta iniciar sesión en la cuenta de Discord. Discord enviará un correo de verificación.',
+    step3Title: '3. Haz clic en "Verificar inicio de sesión"',
+    step3Desc: 'El correo aparecerá aquí al instante. Haz clic en el botón azul "Verificar inicio de sesión" o copia el código.',
+    modalTip: 'Consejo: Puedes ajustar la velocidad del video con el botón ⚡ Velocidad.',
+    modalDone: 'Entendido',
   },
   hi: {
     channelTitle: 'discord-auth-relay',
@@ -143,6 +178,17 @@ const TRANSLATIONS: Record<Language, {
     welcomeSubtext:
       'यह आपके रिले की शुरुआत है। जैसे ही डिस्कॉर्ड सत्यापन ईमेल भेजेगा, पूरा ईमेल यहां प्रदर्शित होगा।',
     waitingPill: 'डिस्कॉर्ड ईमेल की प्रतीक्षा कर रहा है...',
+    watchTutorial: 'ट्यूटोरियल वीडियो देखें',
+    tutorialTitle: 'ट्यूटोरियल: डिस्कॉर्ड ऑथ रिले का उपयोग',
+    tutorialSubtitle: 'स्क्रीन रिकॉर्डिंग ट्यूटोरियल: यह कैसे काम करता है।',
+    step1Title: '1. एक्सेस पिन दर्ज करें',
+    step1Desc: 'लाइव रिले स्ट्रीम शुरू करने के लिए पिन दर्ज करें।',
+    step2Title: '2. डिस्कॉर्ड में लॉग इन करें',
+    step2Desc: 'डिस्कॉर्ड में लॉगिन का प्रयास करें। डिस्कॉर्ड सत्यापन ईमेल भेजेगा।',
+    step3Title: '3. "लॉगिन सत्यापित करें" पर क्लिक करें',
+    step3Desc: 'ईमेल तुरंत यहां दिखाई देगा। बटन पर क्लिक करें या कोड कॉपी करें।',
+    modalTip: 'सुझाव: आप ⚡ स्पीड बटन से गति बदल सकते हैं।',
+    modalDone: 'ठीक है',
   },
   pt: {
     channelTitle: 'discord-auth-relay',
@@ -173,6 +219,17 @@ const TRANSLATIONS: Record<Language, {
     welcomeSubtext:
       'Este é o início do seu relay. Assim que o Discord enviar um e-mail de verificação, o e-mail completo aparecerá aqui.',
     waitingPill: 'Aguardando e-mail do Discord... (polling ativo)',
+    watchTutorial: 'Assistir vídeo tutorial',
+    tutorialTitle: 'Tutorial: Como usar o Discord Auth Relay',
+    tutorialSubtitle: 'Gravação de tela passo a passo de como funciona o relay.',
+    step1Title: '1. Digite o PIN de acesso',
+    step1Desc: 'Insira o PIN para abrir o fluxo de verificação do Discord.',
+    step2Title: '2. Faça login no Discord',
+    step2Desc: 'Tente fazer login no Discord. O Discord enviará um e-mail de verificação.',
+    step3Title: '3. Clique em "Verificar login"',
+    step3Desc: 'O e-mail aparecerá aqui instantaneamente. Clique no botão de verificação ou copie o código.',
+    modalTip: 'Dica: Você pode ajustar a velocidade com o botão ⚡ Velocidade.',
+    modalDone: 'Entendi',
   },
   fr: {
     channelTitle: 'discord-auth-relay',
@@ -203,6 +260,17 @@ const TRANSLATIONS: Record<Language, {
     welcomeSubtext:
       'Voici le début de votre relais. Dès que Discord enverra un e-mail de vérification, le message entier s\'affichera ici.',
     waitingPill: 'En attente d\'un e-mail de Discord...',
+    watchTutorial: 'Regarder le tutoriel vidéo',
+    tutorialTitle: 'Tutoriel : Comment utiliser Discord Auth Relay',
+    tutorialSubtitle: 'Tutoriel vidéo pas à pas montrant le fonctionnement du relais.',
+    step1Title: '1. Entrez le code PIN d\'accès',
+    step1Desc: 'Saisissez le PIN pour ouvrir le flux de relais en direct.',
+    step2Title: '2. Connectez-vous à Discord',
+    step2Desc: 'Tentez de vous connecter à Discord. Discord enverra un e-mail de vérification.',
+    step3Title: '3. Cliquez sur "Vérifier la connexion"',
+    step3Desc: 'L\'e-mail apparaîtra instantanément ici. Cliquez sur le bouton ou copiez le code.',
+    modalTip: 'Astuce : Vous pouvez ajuster la vitesse avec le bouton ⚡ Vitesse.',
+    modalDone: 'Compris',
   },
   de: {
     channelTitle: 'discord-auth-relay',
@@ -233,6 +301,17 @@ const TRANSLATIONS: Record<Language, {
     welcomeSubtext:
       'Dies ist der Anfang deines Relays. Sobald Discord eine E-Mail sendet, wird sie hier angezeigt.',
     waitingPill: 'Warte auf Discord-E-Mail...',
+    watchTutorial: 'Tutorial-Video ansehen',
+    tutorialTitle: 'Tutorial: So verwendest du den Discord Auth Relay',
+    tutorialSubtitle: 'Schritt-für-Schritt-Bildschirmaufnahme zur Funktionsweise.',
+    step1Title: '1. Zugangs-PIN eingeben',
+    step1Desc: 'Gib die PIN ein, um den Live-Relay-Stream zu starten.',
+    step2Title: '2. Bei Discord anmelden',
+    step2Desc: 'Versuche dich bei Discord anzumelden. Discord sendet eine Bestätigungs-E-Mail.',
+    step3Title: '3. Auf "Anmeldung bestätigen" klicken',
+    step3Desc: 'Die E-Mail erscheint sofort hier. Klicke auf den Bestätigungsbutton oder kopiere den Code.',
+    modalTip: 'Tipp: Die Wiedergabegeschwindigkeit kann über die ⚡ Tempo-Taste angepasst werden.',
+    modalDone: 'Verstanden',
   },
 };
 
@@ -288,6 +367,7 @@ export default function Home() {
   const [pinError, setPinError] = useState('');
   const [viewMode, setViewMode] = useState<'rendered' | 'plain'>('rendered');
   const [copied, setCopied] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -416,8 +496,17 @@ export default function Home() {
   if (!savedPin) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#1E1F22] text-[#DBDEE1]">
-        {/* Language selector on login screen */}
-        <div className="w-full max-w-[480px] flex justify-end mb-3">
+        {/* Language selector & Tutorial button on login screen */}
+        <div className="w-full max-w-[480px] flex items-center justify-between mb-3 gap-2">
+          <button
+            type="button"
+            onClick={() => setIsTutorialOpen(true)}
+            className="flex items-center gap-1.5 bg-[#5865F2]/20 hover:bg-[#5865F2]/30 text-[#8EA1FF] px-2.5 py-1 rounded text-xs border border-[#5865F2]/40 transition-colors font-medium shadow-sm"
+          >
+            <span>📺</span>
+            <span>{t.watchTutorial}</span>
+          </button>
+
           <div className="flex items-center gap-1.5 bg-[#2B2D31] px-2 py-1 rounded text-xs border border-[#383A40]">
             <span className="text-sm">🌐</span>
             <select
@@ -473,10 +562,39 @@ export default function Home() {
             </button>
           </form>
 
+          {/* Quick Help / Watch Tutorial button */}
+          <div className="mt-4 pt-4 border-t border-[#383A40]">
+            <button
+              type="button"
+              onClick={() => setIsTutorialOpen(true)}
+              className="w-full py-2 px-3 rounded-[4px] text-xs font-semibold bg-[#2B2D31] hover:bg-[#383A40] text-[#DBDEE1] hover:text-white transition-colors border border-[#383A40] flex items-center justify-center gap-2"
+            >
+              <span>📺</span>
+              <span>{t.watchTutorial}</span>
+            </button>
+          </div>
+
           <p className="text-xs text-[#949BA4] text-center mt-6">
             {t.defaultPinNote} <code className="bg-[#1E1F22] px-1.5 py-0.5 rounded text-[#DBDEE1]">changeme</code> (<code className="text-[#5865F2]">.env.local</code>)
           </p>
         </div>
+
+        <TutorialModal
+          isOpen={isTutorialOpen}
+          onClose={() => setIsTutorialOpen(false)}
+          title={t.tutorialTitle}
+          subtitle={t.tutorialSubtitle}
+          steps={{
+            step1Title: t.step1Title,
+            step1Desc: t.step1Desc,
+            step2Title: t.step2Title,
+            step2Desc: t.step2Desc,
+            step3Title: t.step3Title,
+            step3Desc: t.step3Desc,
+          }}
+          tipText={t.modalTip}
+          doneText={t.modalDone}
+        />
       </main>
     );
   }
@@ -497,6 +615,15 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-2.5">
+          {/* Watch Tutorial Button */}
+          <button
+            onClick={() => setIsTutorialOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium bg-[#5865F2]/20 hover:bg-[#5865F2]/30 text-[#8EA1FF] border border-[#5865F2]/40 transition-colors shadow-sm"
+          >
+            <span>📺</span>
+            <span className="hidden sm:inline">{t.watchTutorial}</span>
+          </button>
+
           {/* Language Selector Dropdown */}
           <div className="flex items-center gap-1 bg-[#1E1F22] px-2 py-1 rounded text-xs border border-[#383A40]">
             <span className="text-xs">🌐</span>
@@ -655,9 +782,80 @@ export default function Home() {
               <span className="w-2.5 h-2.5 rounded-full bg-[#23A55A] animate-ping" />
               <span>{t.waitingPill}</span>
             </div>
+
+            {/* Embedded Tutorial Video Section */}
+            <div className="mt-10 w-full max-w-3xl bg-[#2B2D31] rounded-xl border border-[#383A40] p-4 sm:p-5 text-left shadow-xl">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#5865F2] flex items-center justify-center text-white shrink-0">
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">{t.tutorialTitle}</h3>
+                    <p className="text-xs text-[#949BA4]">{t.tutorialSubtitle}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsTutorialOpen(true)}
+                    className="text-xs text-[#5865F2] hover:text-[#4752C4] font-medium hover:underline flex items-center gap-1"
+                  >
+                    <span>Expand / Popout</span>
+                    <span>↗</span>
+                  </button>
+                </div>
+              </div>
+
+              <TutorialVideoPlayer
+                src="/tutorial.mp4"
+                title={t.tutorialTitle}
+              />
+
+              {/* 3 Step Walkthrough Cards */}
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-[#DBDEE1]">
+                <div className="bg-[#1E1F22] p-3 rounded-lg border border-[#383A40]">
+                  <span className="font-bold text-[#5865F2] block mb-1">{t.step1Title}</span>
+                  <p className="text-[#949BA4] text-[11px] leading-relaxed">
+                    {t.step1Desc}
+                  </p>
+                </div>
+                <div className="bg-[#1E1F22] p-3 rounded-lg border border-[#383A40]">
+                  <span className="font-bold text-[#23A55A] block mb-1">{t.step2Title}</span>
+                  <p className="text-[#949BA4] text-[11px] leading-relaxed">
+                    {t.step2Desc}
+                  </p>
+                </div>
+                <div className="bg-[#1E1F22] p-3 rounded-lg border border-[#383A40]">
+                  <span className="font-bold text-[#F0B232] block mb-1">{t.step3Title}</span>
+                  <p className="text-[#949BA4] text-[11px] leading-relaxed">
+                    {t.step3Desc}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </main>
+
+      {/* Tutorial Video Modal for Full-screen / Pop-up viewing */}
+      <TutorialModal
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        title={t.tutorialTitle}
+        subtitle={t.tutorialSubtitle}
+        steps={{
+          step1Title: t.step1Title,
+          step1Desc: t.step1Desc,
+          step2Title: t.step2Title,
+          step2Desc: t.step2Desc,
+          step3Title: t.step3Title,
+          step3Desc: t.step3Desc,
+        }}
+        tipText={t.modalTip}
+        doneText={t.modalDone}
+      />
     </div>
   );
 }
