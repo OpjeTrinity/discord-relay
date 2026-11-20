@@ -398,7 +398,7 @@ export default function Home() {
             setLang('de');
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
 
     const stored = localStorage.getItem('discord_relay_pin');
@@ -575,7 +575,7 @@ export default function Home() {
           </div>
 
           <p className="text-xs text-[#949BA4] text-center mt-6">
-            {t.defaultPinNote} <code className="bg-[#1E1F22] px-1.5 py-0.5 rounded text-[#DBDEE1]">changeme</code> (<code className="text-[#5865F2]">.env.local</code>)
+            {t.defaultPinNote} <code className="bg-[#1E1F22] px-1.5 py-0.5 rounded text-[#DBDEE1]">melody</code> (<code className="text-[#5865F2]">.env.local</code>)
           </p>
         </div>
 
@@ -676,21 +676,19 @@ export default function Home() {
                 <div className="flex rounded bg-[#1E1F22] p-0.5 border border-[#383A40] text-xs">
                   <button
                     onClick={() => setViewMode('rendered')}
-                    className={`px-3 py-1 rounded font-medium transition-colors ${
-                      viewMode === 'rendered'
-                        ? 'bg-[#5865F2] text-white'
-                        : 'text-[#949BA4] hover:text-white'
-                    }`}
+                    className={`px-3 py-1 rounded font-medium transition-colors ${viewMode === 'rendered'
+                      ? 'bg-[#5865F2] text-white'
+                      : 'text-[#949BA4] hover:text-white'
+                      }`}
                   >
                     {t.htmlView}
                   </button>
                   <button
                     onClick={() => setViewMode('plain')}
-                    className={`px-3 py-1 rounded font-medium transition-colors ${
-                      viewMode === 'plain'
-                        ? 'bg-[#5865F2] text-white'
-                        : 'text-[#949BA4] hover:text-white'
-                    }`}
+                    className={`px-3 py-1 rounded font-medium transition-colors ${viewMode === 'plain'
+                      ? 'bg-[#5865F2] text-white'
+                      : 'text-[#949BA4] hover:text-white'
+                      }`}
                   >
                     {t.plainText}
                   </button>
@@ -774,7 +772,7 @@ export default function Home() {
             </div>
 
             {/* Small Compact Tutorial Video Frame */}
-            <div className="mt-8 w-full max-w-[380px] flex flex-col items-center">
+            <div className="mt-8 w-full max-w-[720px] flex flex-col items-center">
               <div className="w-full flex items-center justify-between mb-2 px-1">
                 <span className="text-xs text-[#949BA4] font-medium flex items-center gap-1.5">
                   <span>📺</span>
