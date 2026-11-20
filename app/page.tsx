@@ -772,7 +772,7 @@ export default function Home() {
             </div>
 
             {/* Small Compact Tutorial Video Frame */}
-            <div className="mt-8 w-full max-w-[720px] flex flex-col items-center">
+            <div className="mt-8 w-full max-w-[1080px] flex flex-col items-center">
               <div className="w-full flex items-center justify-between mb-2 px-1">
                 <span className="text-xs text-[#949BA4] font-medium flex items-center gap-1.5">
                   <span>📺</span>
